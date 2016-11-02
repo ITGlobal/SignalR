@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.SignalR.Hubs;
 
@@ -37,6 +38,17 @@ namespace Microsoft.AspNet.SignalR.Tests.Common.Hubs
                 catch (InvalidOperationException)
                 {
                     Clients.Caller.sendProgressAfterMethodReturnResult(true);
+                }
+            });
+        }
+
+        public Task ReportProgressManyTimes(IProgress<int> progress)
+        {
+            return Task.Factory.StartNew(() =>
+            {
+                foreach (var i in Enumerable.Range(0, 1000))
+                {
+                    progress.Report(i);
                 }
             });
         }

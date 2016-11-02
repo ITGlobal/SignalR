@@ -88,6 +88,40 @@ namespace Microsoft.AspNet.SignalR.FunctionalTests.Server.Hubs
         [InlineData(HostType.HttpListener, TransportType.Websockets, MessageBusType.FakeMultiStream)]
         [InlineData(HostType.HttpListener, TransportType.ServerSentEvents, MessageBusType.FakeMultiStream)]
         [InlineData(HostType.HttpListener, TransportType.LongPolling, MessageBusType.FakeMultiStream)]
+        public async Task HubProgressReportsProgressManyTimes(HostType hostType, TransportType transportType, MessageBusType messageBusType)
+        {
+            using (var host = CreateHost(hostType, transportType))
+            {
+                host.Initialize(messageBusType: messageBusType);
+
+                HubConnection hubConnection = CreateHubConnection(host);
+                IHubProxy proxy = hubConnection.CreateHubProxy("progress");
+                var progressUpdates = new List<int>();
+                Action<int>[] handleProgress = {progress => progressUpdates.Add(progress)};
+
+                using (hubConnection)
+                {
+                    await hubConnection.Start(host.Transport);
+
+                    await proxy.Invoke<int>("ReportProgressManyTimes", progress => handleProgress[0](progress));
+
+                    handleProgress[0] = progress => Assert.True(false, "the task is completed, don't send progress");
+                }
+
+                Assert.Equal(Enumerable.Range(0, 1000).ToArray(), progressUpdates);
+            }
+        }
+
+        [Theory]
+        [InlineData(HostType.IISExpress, TransportType.Websockets, MessageBusType.Default)]
+        [InlineData(HostType.IISExpress, TransportType.ServerSentEvents, MessageBusType.Default)]
+        [InlineData(HostType.IISExpress, TransportType.LongPolling, MessageBusType.Default)]
+        [InlineData(HostType.HttpListener, TransportType.Websockets, MessageBusType.Default)]
+        [InlineData(HostType.HttpListener, TransportType.ServerSentEvents, MessageBusType.Default)]
+        [InlineData(HostType.HttpListener, TransportType.LongPolling, MessageBusType.Default)]
+        [InlineData(HostType.HttpListener, TransportType.Websockets, MessageBusType.FakeMultiStream)]
+        [InlineData(HostType.HttpListener, TransportType.ServerSentEvents, MessageBusType.FakeMultiStream)]
+        [InlineData(HostType.HttpListener, TransportType.LongPolling, MessageBusType.FakeMultiStream)]
         public async Task HubProgressReportsProgressForInt(HostType hostType, TransportType transportType, MessageBusType messageBusType)
         {
             using (var host = CreateHost(hostType, transportType))
